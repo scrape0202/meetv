@@ -44,6 +44,7 @@
         .select-box { padding: 10px; border: 1px solid #000; background: #fff; }
         .btn { padding: 10px 20px; background: #000; color: #fff; border: none; cursor: pointer; font-weight: 600; }
         .btn:hover { background: #333; }
+        .btn.secondary { background: #ffffff; color: #000000; border: 1px solid #000; }
 
         .table-container {
             border: 1px solid #000;
@@ -92,10 +93,6 @@
                 <div class="label">Scraped Today</div>
                 <div id="stat-today" class="value">0</div>
             </div>
-            <div class="stat-card">
-                <div class="label">Database Status</div>
-                <div class="value" style="color: green;">ONLINE</div>
-            </div>
         </div>
 
         <div class="controls">
@@ -105,7 +102,7 @@
                 <option value="100" selected>100 per page</option>
                 <option value="500">500 per page</option>
             </select>
-            <button class="btn" onclick="fetchData()">Manual Refresh</button>
+            <button class="btn secondary" onclick="exportCSV()">Export Full CSV</button>
         </div>
 
         <div id="paginationTop" class="pagination"></div>
@@ -159,13 +156,13 @@
             document.getElementById('stat-total').textContent = allData.length.toLocaleString();
             
             const today = new Date().toISOString().split('T')[0];
-            const todayCount = allData.filter(x => x.scraped_at.includes(today)).length;
+            const todayCount = allData.filter(x => x.scraped_at && x.scraped_at.includes(today)).length;
             document.getElementById('stat-today').textContent = todayCount.toLocaleString();
         }
 
         function applyFilter() {
             const query = document.getElementById('searchBox').value.toLowerCase();
-            filteredData = allData.filter(item => item.user_id.toString().includes(query));
+            filteredData = allData.filter(item => item.user_id && item.user_id.toString().includes(query));
             renderTable();
         }
 
@@ -214,6 +211,25 @@
                     c.appendChild(btn);
                 }
             });
+        }
+
+        function exportCSV() {
+            const cols = ['User ID', 'Scraped At (UTC)'];
+            const csvRows = allData.map(u => [
+                u.user_id,
+                u.scraped_at || ''
+            ].join(','));
+
+            const csvContent = [cols.join(','), ...csvRows].join('\n');
+            const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.setAttribute('href', url);
+            a.setAttribute('download', `meetv_database_${new Date().toISOString().split('T')[0]}.csv`);
+            a.style.visibility = 'hidden';
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
         }
 
         function resetPage() { currentPage = 1; renderTable(); }
