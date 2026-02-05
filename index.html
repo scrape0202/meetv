@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MeetV Scraper Database</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #f4f4f4;
+            color: #333;
+            padding: 20px;
+        }
+        .container { max-width: 900px; margin: 0 auto; background: white; padding: 30px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+        .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; border-bottom: 2px solid #eee; padding-bottom: 10px; }
+        .stats { font-size: 14px; color: #666; }
+        .controls { display: flex; gap: 10px; margin-bottom: 20px; }
+        input { flex: 1; padding: 10px; border: 1px solid #ddd; border-radius: 4px; }
+        .btn { padding: 10px 20px; background: #000; color: #fff; border: none; border-radius: 4px; cursor: pointer; }
+        .btn:hover { background: #333; }
+        table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+        th { background: #f8f8f8; text-align: left; padding: 12px; border-bottom: 2px solid #eee; font-size: 12px; text-transform: uppercase; color: #888; }
+        td { padding: 12px; border-bottom: 1px solid #eee; font-size: 14px; font-family: monospace; }
+        tr:hover { background: #fafafa; }
+        .loading { text-align: center; padding: 20px; font-style: italic; color: #888; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <div class="header">
+        <h1>MeetV User IDs</h1>
+        <div class="stats">Total Scraped: <span id="totalCount">0</span></div>
+    </div>
+
+    <div class="controls">
+        <input type="text" id="searchBox" placeholder="Filter by User ID...">
+        <button class="btn" onclick="loadData()">Refresh</button>
+    </div>
+
+    <div id="loading" class="loading">Fetching from Supabase...</div>
+
+    <table id="userTable" style="display: none;">
+        <thead>
+            <tr>
+                <th style="width: 80px;">#</th>
+                <th>User ID</th>
+                <th>Scraped At (UTC)</th>
+            </tr>
+        </thead>
+        <tbody id="tableBody"></tbody>
+    </table>
+</div>
+
+<script>
+    const SUPABASE_URL = "https://qivhtheytfxhvsdybnru.supabase.co";
+    const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFpdmh0aGV5dGZ4aHZzZHlibnJ1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzAwNjA1NTIsImV4cCI6MjA4NTYzNjU1Mn0.XHmeniPie7Jvsr0dokb0rFGJ0o1r80iZlSr7PYhK10A";
+    
+    let allUsers = [];
+
+    async function loadData() {
+        document.getElementById('loading').style.display = 'block';
+        document.getElementById('userTable').style.display = 'none';
+
+        try {
+            const response = await fetch(
+                `${SUPABASE_URL}/rest/v1/meetv?select=*&order=scraped_at.desc`,
+                { headers: { 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${SUPABASE_KEY}` } }
+            );
+            
+            allUsers = await response.json();
+            renderTable(allUsers);
+            
+            document.getElementById('totalCount').textContent = allUsers.length.toLocaleString();
+            document.getElementById('loading').style.display = 'none';
+            document.getElementById('userTable').style.display = 'table';
+        } catch (error) {
+            console.error("Fetch error:", error);
+            document.getElementById('loading').textContent = "Error loading data.";
+        }
+    }
+
+    function renderTable(data) {
+        const tbody = document.getElementById('tableBody');
+        tbody.innerHTML = '';
+
+        data.forEach((user, index) => {
+            const row = tbody.insertRow();
+            
+            const date = new Date(user.scraped_at);
+            const formattedDate = date.toLocaleDateString() + ' ' + date.toLocaleTimeString();
+
+            row.innerHTML = `
+                <td style="color: #999;">${data.length - index}</td>
+                <td><a href="https://www.roblox.com/users/${user.user_id}/profile" target="_blank" style="color: #0066ff; text-decoration: none;">${user.user_id}</a></td>
+                <td style="color: #666;">${formattedDate}</td>
+            `;
+        });
+    }
+
+    document.getElementById('searchBox').addEventListener('input', (e) => {
+        const query = e.target.value.toLowerCase();
+        const filtered = allUsers.filter(u => u.user_id.toString().includes(query));
+        renderTable(filtered);
+    });
+
+    setInterval(loadData, 30000);
+    
+    loadData();
+</script>
+
+</body>
+</html>
