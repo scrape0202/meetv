@@ -14,13 +14,6 @@
             padding-top: 50px;
         }
 
-        .sticky-notice {
-            position: fixed; top: 0; left: 0; width: 100%;
-            background: #000000; color: #ffffff;
-            padding: 10px; text-align: center;
-            font-size: 12px; font-weight: 500; z-index: 1000;
-        }
-
         .container { max-width: 1200px; margin: 0 auto; padding: 20px; }
 
         .header { border-bottom: 2px solid #000; padding-bottom: 10px; margin-bottom: 20px; }
@@ -75,8 +68,6 @@
 </head>
 <body>
 
-
-
     <div class="container">
         <div class="header">
             <h1>MeetV</h1>
@@ -100,7 +91,7 @@
                 <option value="100" selected>100 per page</option>
                 <option value="500">500 per page</option>
             </select>
-            <button class="btn secondary" onclick="exportCSV()">Export Full CSV</button>
+            <button class="btn secondary" onclick="exportCSV()">Export IDs (CSV)</button>
         </div>
 
         <div id="paginationTop" class="pagination"></div>
@@ -112,7 +103,6 @@
                     <tr>
                         <th>Index</th>
                         <th>Roblox User ID</th>
-                        <th>Profile Link</th>
                         <th>Timestamp (UTC)</th>
                     </tr>
                 </thead>
@@ -180,7 +170,6 @@
                 row.innerHTML = `
                     <td style="color: #999;">${filteredData.length - (start + i)}</td>
                     <td style="font-weight: bold;">${item.user_id}</td>
-                    <td><a href="https://www.roblox.com/users/${item.user_id}/profile" target="_blank" style="color: blue;">View Profile</a></td>
                     <td>${timestamp}</td>
                 `;
             });
@@ -212,18 +201,12 @@
         }
 
         function exportCSV() {
-            const cols = ['User ID', 'Scraped At (UTC)'];
-            const csvRows = allData.map(u => [
-                u.user_id,
-                u.scraped_at || ''
-            ].join(','));
-
-            const csvContent = [cols.join(','), ...csvRows].join('\n');
+            const csvContent = allData.map(u => u.user_id).join('\n');
             const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
             const url = URL.createObjectURL(blob);
             const a = document.createElement('a');
             a.setAttribute('href', url);
-            a.setAttribute('download', `meetv_database_${new Date().toISOString().split('T')[0]}.csv`);
+            a.setAttribute('download', `meetv_ids_${new Date().toISOString().split('T')[0]}.csv`);
             a.style.visibility = 'hidden';
             document.body.appendChild(a);
             a.click();
