@@ -123,10 +123,20 @@
 
         async function fetchData() {
             try {
+
                 const response = await fetch(
                     `${SUPABASE_URL}/rest/v1/meetv?select=*&order=scraped_at.desc`,
-                    { headers: { 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${SUPABASE_KEY}` } }
+                    { 
+                        headers: { 
+                            'apikey': SUPABASE_KEY, 
+                            'Authorization': `Bearer ${SUPABASE_KEY}`,
+                            'Range': '0-10000' 
+                        } 
+                    }
                 );
+                
+                if (!response.ok) throw new Error("Fetch failed");
+                
                 allData = await response.json();
                 
                 updateStats();
@@ -136,7 +146,7 @@
                 document.getElementById('userTable').style.display = 'table';
             } catch (e) {
                 console.error(e);
-                document.getElementById('loading').textContent = "CONNECTION ERROR";
+                document.getElementById('loading').textContent = "CONNECTION ERROR: Check Console";
             }
         }
 
@@ -165,7 +175,7 @@
 
             pageItems.forEach((item, i) => {
                 const row = tbody.insertRow();
-                const timestamp = new Date(item.scraped_at).toLocaleString();
+                const timestamp = item.scraped_at ? new Date(item.scraped_at).toLocaleString() : 'N/A';
                 
                 row.innerHTML = `
                     <td style="color: #999;">${filteredData.length - (start + i)}</td>
@@ -194,7 +204,11 @@
                     const btn = document.createElement('button');
                     btn.className = `page-btn ${i === currentPage ? 'active' : ''}`;
                     btn.textContent = i;
-                    btn.onclick = () => { currentPage = i; renderTable(); window.scrollTo(0,0); };
+                    btn.onclick = () => { 
+                        currentPage = i; 
+                        renderTable(); 
+                        window.scrollTo(0,0); 
+                    };
                     c.appendChild(btn);
                 }
             });
@@ -219,6 +233,7 @@
             currentPage = 1;
             applyFilter();
         });
+
 
         setInterval(fetchData, 15000);
         fetchData();
